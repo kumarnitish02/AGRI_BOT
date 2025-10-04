@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agri-Bot: Agricultural Assistant</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        #chat-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 10px;
+        }
+        #chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+   
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fee7; 
+        }
+
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-custom {
+            animation: spin 1s linear infinite;
+        }
+
+        #language-selector {
+            text-align-last: center; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-lg h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        
+        <header class="p-4 bg-green-700 text-white flex items-center justify-between shadow-md">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/256/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256" class="text-green-300">
+                    <path d="M144,144v88a8,8,0,0,1-16,0V160c-15.9,0-29.28,7.9-38,19a8,8,0,0,1-14.73-6.49C82.85,138.9,103.88,128,128,128A80.08,80.08,0,0,0,56,48a8,8,0,0,1,16,0,64,64,0,0,1,128,0,8,8,0,0,1,16,0,80.08,80.08,0,0,0-72,80.08c0,16,0,24.11,0,32.09A8,8,0,0,1,144,176Z"></path>
+                </svg>
+                <h1 class="text-xl font-bold ml-3">Agri-Bot</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="tts-toggle" title="Toggle Audio Responses" class="p-2 rounded-full bg-green-600 hover:bg-green-500 transition duration-150 active:scale-95">
+                    <svg id="tts-icon-on" xmlns="http://www.w3.org/256/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M184,128a56,56,0,0,0-50-55.51V183.51A56,56,0,0,0,184,128ZM112,64V192a8,8,0,0,1-12.8,6.4L57.54,152H32a8,8,0,0,1-8-8V112a8,8,0,0,1,8-8H57.54L99.2,57.6A8,8,0,0,1,112,64Zm80-24a8,8,0,0,1,8,8v128a8,8,0,0,1-16,0V56A8,8,0,0,1,192,40Z"></path>
+                    </svg>
+                    <svg id="tts-icon-off" xmlns="http://www.w3.org/256/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256" class="hidden">
+                        <path d="M228.24,212.24a8,8,0,0,1-11.31,0L43.76,47.07A8,8,0,0,1,55.07,35.76L212.24,192.93A8,8,0,0,1,228.24,212.24ZM112,64v86.15l-12.8-6.4L57.54,152H32a8,8,0,0,1-8-8V112a8,8,0,0,1,8-8H57.54L71.85,96H104V64a8,8,0,0,1,8-8,8,8,0,0,1,8,8Zm91.76,110a55.51,55.51,0,0,0-23.75-25.75L152,143.51V183.51A56,56,0,0,0,203.76,174ZM184,48a8,8,0,0,1,8,8V128a8,8,0,0,1-16,0V56A8,8,0,0,1,184,48Z"></path>
+                    </svg>
+                </button>
+
+                <select id="language-selector" class="bg-green-600 text-white rounded-md p-1 text-sm focus:ring-green-300 focus:border-green-300">
+                    <option value="en">English</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
+                    <option value="hi-en">Hinglish</option>
+                    <option value="es">Español (Spanish)</option>
+                </select>
+            </div>
+        </header>
+
+        <div class="bg-green-100 p-3 border-b border-green-200 flex items-center space-x-3">
+
+            <svg xmlns="http://www.w3.org/256/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256" class="text-green-700">
+                <path d="M168,24a8,8,0,0,0-8,8v.7A80.4,80.4,0,0,1,128,48,80,80,0,0,0,48,128a80.4,80.4,0,0,1,15.3,42.79A8.09,8.09,0,0,0,66.19,176L160,224l33.81-17.91A8.09,8.09,0,0,0,200,200V107.51a8,8,0,0,0-4.88-7.39l-40-20.93a8,8,0,0,0-7.24,0Z"></path>
+            </svg>
+            <label for="current-crop" class="text-sm font-medium text-green-800 whitespace-nowrap">My Crop:</label>
+            <input 
+                type="text" 
+                id="current-crop" 
+                value="" 
+                placeholder="e.g., Wheat, Corn, Cotton" 
+                class="flex-grow p-1 text-sm rounded border border-green-300 focus:border-green-500 text-green-900"
+            >
+        </div>
+
+        <!-- Message Area -->
+        <main id="chat-messages" class="flex-grow p-4 space-y-4 overflow-y-auto">
+        </main>
+
+        <div id="loading-indicator" class="p-2 text-center text-green-600 hidden">
+            <svg id="loading-spinner-icon" xmlns="http://www.w3.org/256/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256" class="inline-block mr-2 animate-spin-custom">
+                <path d="M168,24a8,8,0,0,0-8,8v.7A80.4,80.4,0,0,1,128,48,80,80,0,0,0,48,128a80.4,80.4,0,0,1,15.3,42.79A8.09,8.09,0,0,0,66.19,176L160,224l33.81-17.91A8.09,8.09,0,0,0,200,200V107.51a8,8,0,0,0-4.88-7.39l-40-20.93a8,8,0,0,0-7.24,0Z"></path>
+            </svg>
+            <span class="text-sm font-medium">Agri-Bot is thinking...</span>
+        </div>
+
+        <footer class="p-4 bg-gray-50 border-t border-gray-200">
+            <div id="mic-unsupported-warning" class="text-red-600 text-xs mb-2 hidden">
+                Speech input requires Chrome or Edge browser.
+            </div>
+            <div class="flex space-x-2 items-center">
+                
+                <button 
+                    id="camera-button" 
+                    title="Upload or take a photo of your crop/pest"
+                    class="px-3 py-3 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 transition duration-150 active:scale-95 flex items-center justify-center"
+                >
+                    <svg id="camera-icon" xmlns="http://www.w3.org/256/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M216,48H168l-8.68-17.36A16,16,0,0,0,144.13,24H111.87a16,16,0,0,0-15.19,6.64L93.42,48H40A24,24,0,0,0,16,72V200a24,24,0,0,0,24,24H216a24,24,0,0,0,24-24V72A24,24,0,0,0,216,48ZM128,192a40,40,0,1,1,40-40A40,40,0,0,1,128,192Zm52-72a8,8,0,1,1-8-8A8,8,0,0,1,180,120Z"></path>
+                    </svg>
+                </button>
+
+                <input type="file" id="image-upload" accept="image/*" capture="environment" class="hidden">
+
+                <button 
+                    id="mic-button" 
+                    title="Speak your question (Voice Input)"
+                    class="px-3 py-3 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition duration-150 active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:bg-gray-400"
+                >
+                    <svg id="mic-icon-svg" xmlns="http://www.w3.org/256/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M128,176a48,48,0,0,0,48-48V64a48,48,0,0,0-96,0v64A48,48,0,0,0,128,176ZM208,128a8,8,0,0,1-8,8A80,80,0,0,1,48,128a8,8,0,0,1-16,0,96.1,96.1,0,0,0,88,96v24a8,8,0,0,0,16,0V224a96.1,96.1,0,0,0,88-96A8,8,0,0,1,208,128ZM128,208a71.72,71.72,0,0,1-56-24.78V160h16a8,8,0,0,0,0-16H72a8,8,0,0,0-8,8v16A88,88,0,0,0,216,128a8,8,0,0,0-16,0A72,72,0,0,1,128,200Z"></path>
+                    </svg>
+                </button>
+                
+                <input 
+                    type="text" 
+                    id="user-input" 
+                    placeholder="Ask about crops, pests, soil, or markets..." 
+                    class="flex-1 p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring focus:ring-green-200 transition duration-150"
+                    onkeydown="if(event.key === 'Enter') document.getElementById('send-button').click()"
+                >
+                
+                <button 
+                    id="send-button" 
+                    title="Send Message"
+                    class="px-3 py-3 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition duration-150 active:scale-95 flex items-center justify-center"
+                >
+                    <svg id="send-icon-svg" xmlns="http://www.w3.org/256/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M216,40V163.14a8,8,0,0,1-4.14,7L147.23,176,112,230.12a8,8,0,0,1-14.49-6.39L108.66,176l-50-25a8,8,0,0,1,0-14l160-88A8,8,0,0,1,216,40ZM95.34,167.35l52.88-26.44a8,8,0,0,0,0-14.22L95.34,112.65,164,74,203.26,95.14Z"></path>
+                    </svg>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <div id="image-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 invisible opacity-0">
+        <div class="bg-white rounded-2xl w-full max-w-sm md:max-w-md p-6 shadow-2xl transform transition duration-300">
+            <h2 class="text-xl font-bold mb-4 text-green-700">Review Image & Ask</h2>
+            
+            <img id="image-preview" src="" alt="Selected crop image" class="w-full max-h-60 object-contain rounded-lg mb-4 border border-gray-300">
+            
+            <textarea id="image-caption" 
+                placeholder="What is your question about this image? (e.g., 'What pest is this?', 'Is this leaf healthy?')" 
+                rows="3"
+                class="w-full p-2 border border-gray-300 rounded-lg focus:border-green-500 resize-none mb-4"
+            ></textarea>
+
+            <div class="flex justify-between space-x-3">
+                <button id="modal-cancel-button" 
+                    class="flex-grow py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition duration-150 font-medium">
+                    Cancel
+                </button>
+                <button id="modal-send-button" 
+                    class="flex-grow py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition duration-150 font-medium">
+                    Send with Photo
+                </button>
+            </div>
+            <p id="modal-error-message" class="text-red-600 text-sm mt-3 hidden">Image processing failed. Try again.</p>
+        </div>
+    </div>
+
+
+    <!-- JavaScript for Chat Logic and Gemini API -->
+    <script type="module">
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const micButton = document.getElementById('mic-button');
+        const languageSelector = document.getElementById('language-selector');
+        const ttsToggleButton = document.getElementById('tts-toggle'); 
+        const ttsIconOn = document.getElementById('tts-icon-on');
+        const ttsIconOff = document.getElementById('tts-icon-off');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const micWarning = document.getElementById('mic-unsupported-warning');
+        const cameraButton = document.getElementById('camera-button');
+        const imageUploadInput = document.getElementById('image-upload');
+        const imageModal = document.getElementById('image-modal');
+        const imagePreview = document.getElementById('image-preview');
+        const imageCaptionInput = document.getElementById('image-caption');
+        const modalSendButton = document.getElementById('modal-send-button');
+        const modalCancelButton = document.getElementById('modal-cancel-button');
+        const modalError = document.getElementById('modal-error-message');
+        
+        const SVG_MIC = `
+            <svg id="mic-icon-svg" xmlns="http://www.w3.org/256/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                <path d="M128,176a48,48,0,0,0,48-48V64a48,48,0,0,0-96,0v64A48,48,0,0,0,128,176ZM208,128a8,8,0,0,1-8,8A80,80,0,0,1,48,128a8,8,0,0,1-16,0,96.1,96.1,0,0,0,88,96v24a8,8,0,0,0,16,0V224a96.1,96.1,0,0,0,88-96A8,8,0,0,1,208,128ZM128,208a71.72,71.72,0,0,1-56-24.78V160h16a8,8,0,0,0,0-16H72a8,8,0,0,0-8,8v16A88,88,0,0,0,216,128a8,8,0,0,0-16,0A72,72,0,0,1,128,200Z"></path>
+            </svg>
+        `;
+        const SVG_STOP = `
+            <svg id="stop-icon" xmlns="http://www.w3.org/256/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                <path d="M200,64H56A24,24,0,0,0,32,88V168a24,24,0,0,0,24,24H200a24,24,0,0,0,24-24V88A24,24,0,0,0,200,64Z"></path>
+            </svg>
+        `;
+        const SVG_SEND = `
+            <svg id="send-icon-svg" xmlns="http://www.w3.org/256/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
+                <path d="M216,40V163.14a8,8,0,0,1-4.14,7L147.23,176,112,230.12a8,8,0,0,1-14.49-6.39L108.66,176l-50-25a8,8,0,0,1,0-14l160-88A8,8,0,0,1,216,40ZM95.34,167.35l52.88-26.44a8,8,0,0,0,0-14.22L95.34,112.65,164,74,203.26,95.14Z"></path>
+            </svg>
+        `;
+        const SVG_LEAF_SPIN = `
+            <svg id="loading-spinner-icon" xmlns="http://www.w3.org/256/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256" class="inline-block mr-2 animate-spin-custom">
+                <path d="M168,24a8,8,0,0,0-8,8v.7A80.4,80.4,0,0,1,128,48,80,80,0,0,0,48,128a80.4,80.4,0,0,1,15.3,42.79A8.09,8.09,0,0,0,66.19,176L160,224l33.81-17.91A8.09,8.09,0,0,0,200,200V107.51a8,8,0,0,0-4.88-7.39l-40-20.93a8,8,0,0,0-7.24,0Z"></path>
+            </svg>
+        `;
+        
+        let selectedImageBase64 = null;
+        let selectedImageMimeType = null;
+        let isAudioEnabled = true; 
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const isSpeechSupported = !!SpeechRecognition;
+        if (!isSpeechSupported) {
+            micButton.disabled = true;
+            micWarning.classList.remove('hidden');
+        }
+
+        // --- Gemini API Configuration  ---
+        const API_KEY = "AIzaSyBAXg7MFXeIvyyRqZOP_pid-C2EYrNJdKw"; 
+        
+        const CHAT_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+        const TTS_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${API_KEY}`;
+        const TTS_VOICE = "Kore"; 
+        
+        const BASE_SYSTEM_PROMPT = "You are 'Agri-Bot', a world-class agricultural expert, agronomist, and farmer's assistant. Your primary goal is to provide accurate, up-to-date, and practical advice to farmers. Focus on weather-based alerts, predictive insights, and crop-specific guidance. Keep answers concise, direct, and actionable, suitable for quick decision-making in the field. Use the Google Search tool when answering questions about specific crops, real-time market conditions, recent pest outbreaks, current weather patterns, or new farming techniques. If information is found using Google Search, you MUST include the source citations at the end of your response.";
+        
+        let chatHistory = [];
+        let recognition = isSpeechSupported ? new SpeechRecognition() : null;
+        let isListening = false;
+
+
+
+        function updateGreeting() {
+            const lang = languageSelector.value;
+            let greetingText = {
+                en: `Hello there! I'm Agri-Bot, your agricultural assistant. I'm ready to help with crops, soil, pests, or market questions. (Audio is currently ${isAudioEnabled ? 'ON' : 'OFF'}!)`,
+                hi: `नमस्ते! मैं एग्री-बॉट हूँ, आपका कृषि सहायक। मैं फसलों, मिट्टी, कीटों या बाज़ार के सवालों में मदद के लिए तैयार हूँ। (ऑडियो अभी ${isAudioEnabled ? 'चालू है' : 'बंद है'}!)`,
+                'hi-en': `Namaste! Mai Agri-Bot hu, aapka kheti-baari assistant. Mai fasalon, mitti, keeton, aur bazaar ke sawalon mein help karne ke liye ready hu. (Audio abhi ${isAudioEnabled ? 'ON hai' : 'OFF hai'}!)`,
+                es: `¡Hola! Soy Agri-Bot, su asistente agrícola. Estoy listo para ayudar con cultivos, suelos, plagas o preguntas de mercado. (¡El audio está ${isAudioEnabled ? 'activado' : 'desactivado'}!)`
+            };
+
+            chatMessages.innerHTML = ''; 
+            addMessage('ai', greetingText[lang] || greetingText['en']);
+            document.documentElement.lang = lang; 
+        }
+
+      
+
+        function showImageModal() {
+            imageModal.classList.remove('invisible', 'opacity-0');
+            imageModal.classList.add('opacity-100');
+            imageCaptionInput.focus();
+        }
+
+        function hideImageModal() {
+            imageModal.classList.add('invisible', 'opacity-0');
+            imageModal.classList.remove('opacity-100');
+        
+            selectedImageBase64 = null;
+            selectedImageMimeType = null;
+            imageUploadInput.value = '';
+            imageCaptionInput.value = '';
+            modalError.classList.add('hidden');
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                hideImageModal();
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                modalError.textContent = "Please select a valid image file.";
+                modalError.classList.remove('hidden');
+                return;
+            }
+
+            modalError.classList.add('hidden');
+            selectedImageMimeType = file.type;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64String = e.target.result.split(',')[1];
+                selectedImageBase64 = base64String;
+                imagePreview.src = e.target.result;
+                showImageModal();
+            };
+            reader.onerror = function() {
+                modalError.textContent = "Error reading image file.";
+                modalError.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+
+        if (isSpeechSupported) {
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            
+     
+            recognition.lang = languageSelector.value; 
+
+            recognition.onstart = () => {
+                isListening = true;
+                micButton.classList.add('bg-red-500', 'animate-pulse');
+                
+                micButton.innerHTML = SVG_STOP; 
+                userInput.placeholder = "Listening... Speak now...";
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userInput.value = transcript;
+                
+                if (transcript.trim().length > 0) {
+                     sendMessage();
+                }
+            };
+            
+            
+            recognition.onerror = (event) => {
+                isListening = false;
+                micButton.classList.remove('bg-red-500', 'animate-pulse');
+             
+                micButton.innerHTML = SVG_MIC; 
+                userInput.placeholder = "Ask about crops, pests, soil, or markets...";
+
+                let errorMessage = '';
+                
+                if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+                   
+                    errorMessage = "🚫 **Microphone Access Denied.** Please check your browser's site settings (look for the camera/mic icon in the address bar) and grant permission for this page to use your microphone. If you are using a non-Chrome browser, please switch to Chrome or Edge, or type your question.";
+                } else if (event.error === 'no-speech') {
+                   
+                    errorMessage = "😕 **No Speech Detected.** I didn't hear anything. Please try speaking louder and clearly after pressing the microphone button.";
+                } else if (event.error !== 'abort') {
+                   
+                    console.error('Speech Recognition Error:', event.error);
+                    errorMessage = `❌ **Speech Error:** ${event.error}. The service stopped. Please try again.`;
+                }
+
+                if (errorMessage) {
+                    addMessage('ai', errorMessage);
+                }
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                micButton.classList.remove('bg-red-500', 'animate-pulse');
+               
+                micButton.innerHTML = SVG_MIC;
+                userInput.placeholder = "Ask about crops, pests, soil, or markets...";
+            };
+        }
+
+        function toggleSpeechRecognition() {
+            if (!isSpeechSupported) return;
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                const selectedLang = languageSelector.value;
+                
+                recognition.lang = selectedLang === 'hi-en' ? 'hi-IN' : selectedLang; 
+                
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error("Recognition start failed (maybe already started):", e);
+                }
+            }
+        }
+
+       
+
+        function toggleAudio() {
+            isAudioEnabled = !isAudioEnabled;
+            if (isAudioEnabled) {
+                ttsIconOn.classList.remove('hidden');
+                ttsIconOff.classList.add('hidden');
+                ttsToggleButton.classList.add('bg-green-600', 'hover:bg-green-500');
+                ttsToggleButton.classList.remove('bg-gray-500', 'hover:bg-gray-400');
+                ttsToggleButton.title = "Toggle Audio Responses (Currently ON)";
+            } else {
+                ttsIconOn.classList.add('hidden');
+                ttsIconOff.classList.remove('hidden');
+                ttsToggleButton.classList.remove('bg-green-600', 'hover:bg-green-500');
+                ttsToggleButton.classList.add('bg-gray-500', 'hover:bg-gray-400');
+                ttsToggleButton.title = "Toggle Audio Responses (Currently OFF)";
+            }
+            if (chatHistory.length === 1 && chatHistory[0].role === 'model') {
+                updateGreeting();
+            }
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcmData, sampleRate) {
+            const pcm16 = new Int16Array(pcmData);
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+            
+            const writeString = (str) => {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(pos++, str.charCodeAt(i));
+                }
+            };
+
+            let pos = 0;
+
+            writeString('RIFF');
+            view.setUint32(pos, 36 + pcm16.length * 2, true); pos += 4;
+            writeString('WAVE');
+            
+            writeString('fmt ');
+            view.setUint32(pos, 16, true); pos += 4;
+            view.setUint16(pos, 1, true); pos += 2;
+            view.setUint16(pos, 1, true); pos += 2;
+            view.setUint32(pos, sampleRate, true); pos += 4;
+            view.setUint32(pos, sampleRate * 2, true); pos += 4;
+            view.setUint16(pos, 2, true); pos += 2;
+            view.setUint16(pos, 16, true); pos += 2;
+            
+            writeString('data');
+            view.setUint32(pos, pcm16.length * 2, true); pos += 4;
+            
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(pos, pcm16[i], true);
+                pos += 2;
+            }
+            
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        async function generateAndPlayAudio(text) {
+            if (!isAudioEnabled) {
+                console.log("TTS disabled by user setting.");
+                return;
+            }
+
+            if (!API_KEY) {
+            }
+            
+            const payload = {
+                contents: [{
+                    parts: [{ text: text }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: TTS_VOICE }
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            try {
+                const response = await fetchWithBackoff(TTS_API_URL, options);
+                const result = await response.json();
+                
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    if (!sampleRateMatch) throw new Error("Could not determine sample rate from MIME type.");
+                    
+                    const sampleRate = parseInt(sampleRateMatch[1], 10);
+                    
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const wavBlob = pcmToWav(pcmData, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+
+                } else {
+                    console.error("TTS response missing audio data or invalid format:", result);
+                }
+
+            } catch (error) {
+                console.error("TTS API call failed:", error);
+            }
+        }
+
+
+        function addMessage(sender, text, sources = [], imageSrc = null) {
+            const messageDiv = document.createElement('div');
+            const contentDiv = document.createElement('div');
+            
+            contentDiv.classList.add('max-w-xs', 'md:max-w-md', 'p-3', 'rounded-xl', 'shadow');
+            
+            if (sender === 'user') {
+                messageDiv.classList.add('flex', 'justify-end');
+                contentDiv.classList.add('bg-blue-600', 'text-white', 'rounded-tr-none');
+            } else {
+                messageDiv.classList.add('flex', 'justify-start');
+                contentDiv.classList.add('bg-green-100', 'text-green-800', 'rounded-tl-none');
+            }
+
+            let htmlContent = '';
+
+            if (imageSrc) {
+                htmlContent += `<img src="${imageSrc}" alt="User provided crop image" class="w-full h-auto rounded-lg mb-2 border border-blue-400">`;
+            }
+
+            const formattedText = text
+                .replace(/\$\$(.*?)\$\$/gs, (match, p1) => `<span class="block my-1 text-center font-mono">${p1}</span>`) 
+                .replace(/\$(.*?)\$/g, (match, p1) => `<span class="font-mono">${p1}</span>`)
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
+
+            htmlContent += `<p>${formattedText}</p>`;
+            contentDiv.innerHTML = htmlContent;
+
+            if (sources.length > 0) {
+                const sourcesList = sources.map((s, index) => 
+                    `<li class="list-disc ml-4"><a href="${s.uri}" target="_blank" class="text-xs text-green-700 hover:underline">${s.title || 'Source'}</a></li>`
+                ).join('');
+                
+                contentDiv.innerHTML += `
+                    <div class="mt-2 pt-2 border-t border-green-200">
+                        <p class="text-xs font-semibold text-green-600 mb-1">Sources:</p>
+                        <ul class="text-xs">${sourcesList}</ul>
+                    </div>
+                `;
+            }
+
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function toggleLoading(isLoading) {
+            sendButton.disabled = isLoading;
+            micButton.disabled = isLoading || !isSpeechSupported;
+            cameraButton.disabled = isLoading;
+            userInput.disabled = isLoading;
+
+            loadingIndicator.classList.toggle('hidden', !isLoading);
+            
+            if (isLoading) {
+                sendButton.innerHTML = SVG_LEAF_SPIN;
+            } else {
+                
+                sendButton.innerHTML = SVG_SEND;
+            }
+        }
+
+        async function fetchWithBackoff(url, options, maxRetries = 5) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+             
+                    if (response.status < 500) { 
+                        return response;
+                    }
+                    
+                    if (i === maxRetries - 1) throw new Error(`Server error: ${response.status}`);
+                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+            throw new Error('API request failed after multiple retries.');
+        }
+        
+
+        async function sendMessage(imageMode = false) {
+            let userText = '';
+            let imageBase64 = null;
+            let imageMimeType = null;
+            let imageSourceUrl = null;
+
+            if (imageMode) {
+                userText = imageCaptionInput.value.trim();
+                imageBase64 = selectedImageBase64;
+                imageMimeType = selectedImageMimeType;
+                imageSourceUrl = imagePreview.src;
+                hideImageModal();
+            } else {
+                userText = userInput.value.trim();
+            }
+            
+            // Validation
+            if (!userText && !imageBase64) return;
+            if (isListening) recognition.stop();
+            
+            if (!API_KEY || API_KEY === "") {
+                addMessage('ai', '🛑 **API Configuration Error:** The Gemini API key is missing or blank. The application cannot connect to the AI service. Please ensure the key is correctly set in the JavaScript code.');
+                return;
+            }
+
+            const currentLanguage = languageSelector.value;
+            const currentCrop = document.getElementById('current-crop').value.trim();
+
+            let langInstruction = `Respond ONLY in the language code: ${currentLanguage}. If you cannot translate the response, use English but note the model's limitation.`;
+            if (currentLanguage === 'hi-en') {
+                langInstruction = "Respond in Hinglish (a simple mix of Hindi and English) suitable for low-literate farmers. Use simple vocabulary and actionable steps. For example: 'Aapki fasal mein yeh zaroori kaam karein...'";
+            }
+
+            const contextPrompt = currentCrop ? 
+                `My current crop is "${currentCrop}". Provide any relevant **weather alerts** or **predictive insights** for this crop in my location based on current information. ` : 
+                "No specific crop defined. ";
+            
+            const finalSystemPrompt = `${BASE_SYSTEM_PROMPT} ${contextPrompt} ${langInstruction}`;
+
+            addMessage('user', userText, [], imageSourceUrl);
+            userInput.value = '';
+            toggleLoading(true);
+
+            const contentParts = [];
+            
+            contentParts.push({ text: userText }); 
+
+            if (imageBase64 && imageMimeType) {
+                contentParts.push({
+                    inlineData: {
+                        mimeType: imageMimeType,
+                        data: imageBase64
+                    }
+                });
+            }
+
+            chatHistory.push({ role: "user", parts: contentParts });
+
+            const chatPayload = {
+                contents: chatHistory, 
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: finalSystemPrompt }]
+                },
+            };
+
+            const chatOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(chatPayload)
+            };
+
+            try {
+                const response = await fetchWithBackoff(CHAT_API_URL, chatOptions);
+                
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    let errorMessage = 'An unexpected error occurred while contacting the assistant. Please check the console for details and try again.';
+                    
+                    if (response.status === 400 && errorBody.error?.message.includes('API key not valid')) {
+                         errorMessage = '🛑 **API Error (400 - Invalid Key):** The connection to the Gemini AI failed because the API key is not valid or improperly configured. Please check the code for the correct key.';
+                    } else if (response.status === 403) {
+                         errorMessage = '🛑 **API Error (403 - Forbidden):** The service denied access. This usually means the API key is incorrect or has not been enabled for use.';
+                    } else if (errorBody.error?.message) {
+                         errorMessage = `🛑 **API Error (${response.status}):** ${errorBody.error.message}`;
+                    }
+                    
+                    addMessage('ai', errorMessage);
+                    console.error("API Call Failed:", errorBody);
+                    chatHistory.pop(); 
+                    return; 
+                }
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const aiText = candidate.content.parts[0].text;
+                    
+                    let sources = [];
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri && source.title);
+                    }
+
+                    addMessage('ai', aiText, sources);
+                    
+                    generateAndPlayAudio(aiText);
+
+                    chatHistory.push({ role: "model", parts: [{ text: aiText }] });
+
+                } else {
+                    addMessage('ai', 'Sorry, I received an empty or invalid response from the agricultural database. Please try rephrasing your question.');
+                }
+
+            } catch (error) {
+                console.error("Gemini Chat API call failed:", error);
+                addMessage('ai', 'An unexpected network error occurred. Please check your internet connection and try again.');
+            } finally {
+                toggleLoading(false);
+                selectedImageBase64 = null;
+                selectedImageMimeType = null;
+            }
+        }
+
+
+        updateGreeting();
+        toggleAudio(); 
+
+        
+        sendButton.addEventListener('click', () => sendMessage(false));
+        micButton.addEventListener('click', toggleSpeechRecognition);
+        languageSelector.addEventListener('change', updateGreeting);
+        ttsToggleButton.addEventListener('click', toggleAudio); 
+
+       
+        cameraButton.addEventListener('click', () => {
+            imageUploadInput.click();
+        });
+        imageUploadInput.addEventListener('change', handleImageUpload);
+        modalCancelButton.addEventListener('click', hideImageModal);
+        modalSendButton.addEventListener('click', () => sendMessage(true)); 
+        
+      
+        imageCaptionInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                modalSendButton.click();
+            }
+        });
+
+    </script>
+</body>
+</html>
